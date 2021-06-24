@@ -37,6 +37,15 @@ class MainView: UIView {
         return bt
     }()
 
+    let calculateButton: UIButton = {
+        let bt = UIButton()
+        bt.translatesAutoresizingMaskIntoConstraints = false
+        bt.setTitle("Calcular próxima jogada", for: .normal)
+        bt.setTitleColor(.white, for: .normal)
+
+        return bt
+    }()
+
     let puzzleView: PuzzleView = {
         let puzzle = PuzzleView()
         puzzle.translatesAutoresizingMaskIntoConstraints = false
@@ -77,9 +86,13 @@ class MainView: UIView {
 
     private func configureButton() {
         addSubview(scanButton)
+        addSubview(calculateButton)
         NSLayoutConstraint.activate([
             scanButton.topAnchor.constraint(equalTo: puzzleView.bottomAnchor, constant: 20),
-            scanButton.centerXAnchor.constraint(equalTo: centerXAnchor)
+            scanButton.centerXAnchor.constraint(equalTo: centerXAnchor),
+
+            calculateButton.topAnchor.constraint(equalTo: scanButton.bottomAnchor, constant: 12),
+            calculateButton.centerXAnchor.constraint(equalTo: centerXAnchor)
         ])
     }
 

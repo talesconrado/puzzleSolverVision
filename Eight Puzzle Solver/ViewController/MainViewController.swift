@@ -14,11 +14,15 @@ class MainViewController: UIViewController {
 
     var orderedNumbers = [String?]()
     var board: [[String?]] = []
+    var path: [[[String]]] = []
+    var currentMovement = 0
 
     override func loadView() {
         view = contentView
         contentView.scanButton.addTarget(self, action: #selector(presentDocumentCamera), for: .touchUpInside)
+        contentView.calculateButton.addTarget(self, action: #selector(calculatePath), for: .touchUpInside)
         contentView.setDelegates(delegate: self)
+
     }
 
     override func viewDidLoad() {
@@ -27,6 +31,7 @@ class MainViewController: UIViewController {
     }
 
     func doRequest(img: UIImage) {
+        self.path = []
         self.orderedNumbers = []
         self.board = []
         let request = VNRecognizeTextRequest { request, error in
@@ -79,16 +84,49 @@ class MainViewController: UIViewController {
             orderedNumbers.removeLast()
         }
 
-        while orderedNumbers.count < 9 {
-            orderedNumbers.append(nil)
-        }
-
         if orderedNumbers.count == 9 {
             self.board = [Array(orderedNumbers[0...2]), Array(orderedNumbers[3...5]), Array(orderedNumbers[6...8])]
         }
 
         self.contentView.board = self.board
         self.contentView.setupBoard()
+    }
+
+    @objc private func calculatePath() {
+        guard !board.isEmpty else { return }
+
+        if path.isEmpty {
+            let puzzleSolver = Puzzle()
+            let correctedBoard = board.map({ $0.compactMap({ $0 == nil ? "0" : $0 }) })
+
+            let alert = UIAlertController(title: nil, message: "Resolvendo o jogo...", preferredStyle: .alert)
+
+            let loadingIndicator = UIActivityIndicatorView(frame: CGRect(x: 10, y: 5, width: 50, height: 50))
+            loadingIndicator.hidesWhenStopped = true
+            loadingIndicator.style = UIActivityIndicatorView.Style.medium
+            loadingIndicator.startAnimating();
+
+            alert.view.addSubview(loadingIndicator)
+            present(alert, animated: true, completion: nil)
+
+            DispatchQueue.global(qos: .userInitiated).async {
+                let path = puzzleSolver.a_estrela(start: correctedBoard) {
+                    DispatchQueue.main.async {
+                        self.dismiss(animated: true, completion: nil)
+                    }
+                }
+
+                self.path = path.state
+                self.board = path.state.first!.map({ $0.map({ $0 == "0" ? nil : $0 }) })
+                self.contentView.setupBoard()
+            }
+        } else {
+            currentMovement += 1
+            if currentMovement < path.count {
+                board = path[currentMovement].map({ $0.map({ $0 == "0" ? nil : $0 }) })
+            }
+            contentView.setupBoard()
+        }
     }
 
     private func showAlert(indexPath: IndexPath) {
